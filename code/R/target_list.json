@@ -1,0 +1,5 @@
+{
+	"targets" : ["EPHA2", "MMP14", "NECTIN4"],
+	"data_commons" : "../../../000_data_commons/input/"
+}
+
