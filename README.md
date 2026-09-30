@@ -70,7 +70,7 @@ The **024_target_mrna_emd** repository provides an end-to-end analytical workflo
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/BicycleTx/024_target_mrna_emd.git
+git clone https://github.com/MaxSalmBtx/024_target_mrna_emd.git
 cd 024_target_mrna_emd
 ```
 
