@@ -1,5 +1,5 @@
 # Record the session for Docker
-renv::init() 
+# renv::init() 
 
 # tar_manifest(fields = all_of("command"))
 # tar_visnetwork()
@@ -8,5 +8,5 @@ targets::tar_make()
 # targets::tar_load(exp_tb)
 
 ## Take a snaphsot of all dependencies
-renv::snapshot()
+# renv::snapshot()
 
