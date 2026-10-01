@@ -34,7 +34,7 @@ RUN R -e "remotes::install_version(package = 'targets', version = '>= 1.4.1', de
 ## Install project-specific dependencies
 COPY renv.lock .
 COPY renv/activate.R renv/
-COPY .Rprofile .
+#COPY .Rprofile .
 RUN R -e "renv::restore()"
 COPY . .
 # Run bash when the container launches

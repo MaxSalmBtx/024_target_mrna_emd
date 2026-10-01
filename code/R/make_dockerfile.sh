@@ -48,12 +48,12 @@ cat <<EOF > .dockerignore
 ./*
 EOF
 # Build docker image
-if [[ "$(docker images -q docker_img 2> /dev/null)" == "" ]]; then
-echo "Building Docker image"
-docker build -t docker_img:0.1.0 -f Dockerfile .
-docker run -i docker_img:0.1.0 quarto check
-else
-echo "Docker image exists"
-# docker build -t docker_img:0.1.0 -f ./code/docker/Dockerfile .
-docker run -i docker_img:0.1.0 quarto check
-fi
+# if [[ "$(docker images -q docker_img 2> /dev/null)" == "" ]]; then
+# echo "Building Docker image"
+# docker build -t docker_img:0.1.0 -f Dockerfile .
+# docker run -i docker_img:0.1.0 quarto check
+# else
+# echo "Docker image exists"
+# # docker build -t docker_img:0.1.0 -f ./code/docker/Dockerfile .
+# docker run -i docker_img:0.1.0 quarto check
+# fi
