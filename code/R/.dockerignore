@@ -1,0 +1,2 @@
+# Don't load bash/R code into docker image at build time
+./*

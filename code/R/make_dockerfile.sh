@@ -1,3 +1,6 @@
+#!/bin/bash
+
+cat <<EOF > Dockerfile
 ## Docker container
 FROM rocker/rstudio:4.6.1
 MAINTAINER Max Salm <maxsalm3@gmail.com>
@@ -39,3 +42,18 @@ RUN R -e "renv::restore()"
 COPY . .
 # Run bash when the container launches
 CMD ["bash"]
+EOF
+cat <<EOF > .dockerignore
+# Don't load bash/R code into docker image at build time
+./*
+EOF
+# Build docker image
+if [[ "$(docker images -q docker_img 2> /dev/null)" == "" ]]; then
+echo "Building Docker image"
+docker build -t docker_img:0.1.0 -f ./code/docker/Dockerfile .
+docker run -i docker_img:0.1.0 quarto check
+else
+echo "Docker image exists"
+# docker build -t docker_img:0.1.0 -f ./code/docker/Dockerfile .
+docker run -i docker_img:0.1.0 quarto check
+fi
