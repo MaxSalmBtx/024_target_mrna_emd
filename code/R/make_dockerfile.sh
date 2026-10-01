@@ -37,7 +37,7 @@ RUN R -e "remotes::install_version(package = 'targets', version = '>= 1.4.1', de
 ## Install project-specific dependencies
 COPY renv.lock .
 COPY renv/activate.R renv/
-COPY .Rprofile .
+#COPY .Rprofile .
 RUN R -e "renv::restore()"
 COPY . .
 # Run bash when the container launches
@@ -50,7 +50,7 @@ EOF
 # Build docker image
 if [[ "$(docker images -q docker_img 2> /dev/null)" == "" ]]; then
 echo "Building Docker image"
-docker build -t docker_img:0.1.0 -f ./code/docker/Dockerfile .
+docker build -t docker_img:0.1.0 -f Dockerfile .
 docker run -i docker_img:0.1.0 quarto check
 else
 echo "Docker image exists"
