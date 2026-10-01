@@ -757,17 +757,17 @@ plot_static_heatmap <- function(x, y) {
 	
 	## --- Meta-analysis of Wilcoxon p-values ---
 	# Fisher Method: Best for asymmetric scenarios where you suspect at least one of your tests has a strong effect, even if others do not. 
-	to_test <- split(x = to_plot$pval_wilcox, f = to_plot$SYMBOL)
-	tmp <- lapply(X = to_test, FUN = metap::sumlog, log.p = FALSE)
-	tmp1 <- unlist(sapply(X = tmp, FUN = "[", i = "p")) 
-	meta_tb <- 
-		tibble::tibble(
-			SYMBOL = gsub("\\.p$", "", names(tmp1)),
-			pval = -log10(p.adjust(tmp1, method = "bonferroni"))
-		) 
-	idx <- is.infinite(meta_tb$pval)
-	top_p <- max(meta_tb$pval[!idx])	
-	meta_tb$pval[idx] <- top_p	# winsorise Inf values
+	# to_test <- split(x = to_plot$pval_wilcox, f = to_plot$SYMBOL)
+	# tmp <- lapply(X = to_test, FUN = metap::sumlog, log.p = FALSE)
+	# tmp1 <- unlist(sapply(X = tmp, FUN = "[", i = "p")) 
+	# meta_tb <- 
+		# tibble::tibble(
+			# SYMBOL = gsub("\\.p$", "", names(tmp1)),
+			# pval = -log10(p.adjust(tmp1, method = "bonferroni"))
+		# ) 
+	# idx <- is.infinite(meta_tb$pval)
+	# top_p <- max(meta_tb$pval[!idx])	
+	# meta_tb$pval[idx] <- top_p	# winsorise Inf values
 
 	## --- Extract matrix ---
 	tmp <- 
@@ -798,20 +798,20 @@ plot_static_heatmap <- function(x, y) {
 		# circlize::colorRamp2(breaks = breaks_1, colors = pval_heatmap)		
 	
 	## --- Bottom target annotation ---
-	pval_col <- meta_tb$pval[match(colnames(m), meta_tb$SYMBOL)]
-	bottom_ha <- 
-		ComplexHeatmap::HeatmapAnnotation(
-			fisher_p = pval_col,
-			#col = list(fisher_p = pval_heatmap),
-			annotation_name_side = "left",
-			annotation_legend_param = 
-				list(
-					fisher_p = list(
-						title = "Meta p-value (-log10)", 
-						direction = "horizontal", 
-						nrow = 1)
-				)
-		)
+	# pval_col <- meta_tb$pval[match(colnames(m), meta_tb$SYMBOL)]
+	# bottom_ha <- 
+		# ComplexHeatmap::HeatmapAnnotation(
+			# fisher_p = pval_col,
+			# #col = list(fisher_p = pval_heatmap),
+			# annotation_name_side = "left",
+			# annotation_legend_param = 
+				# list(
+					# fisher_p = list(
+						# title = "Meta p-value (-log10)", 
+						# direction = "horizontal", 
+						# nrow = 1)
+				# )
+		# )
 
 	## Indication annotation
 	grps_row <- to_plot$priority[match(rownames(m), to_plot$primary_disease_or_tissue)]
@@ -834,7 +834,7 @@ plot_static_heatmap <- function(x, y) {
 			),			
 			na_col = "black",
 			right_annotation = row_ha,
-			bottom_annotation = bottom_ha,
+			# bottom_annotation = bottom_ha,
 			row_title = NULL,
 			column_title = NULL,
 			row_names_gp = gpar(fontsize = 18),
