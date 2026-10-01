@@ -1,9 +1,11 @@
 # tar_make(script = "_targets.R")
 
-
 ## To execute this in an R session:
 # tar_make(callr_function = NULL)
 
+
+
+# Core libraries
 library(targets)
 library(tarchetypes)
 library(crew)
@@ -66,3 +68,4 @@ list(
 	data_collation,
 	tumour_mrna_deg_module
 )
+
