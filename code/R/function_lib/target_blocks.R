@@ -34,7 +34,7 @@ tumour_mrna_deg_module <-
 					perms = 1
 				),
 			pattern = map(comparison_plan),
-			resources = tar_resources(crew = tar_resources_crew(controller = "my_local_controller")),
+			#resources = tar_resources(crew = tar_resources_crew(controller = "my_local_controller")),
 			error = "null", # continue on error
 			iteration = "list" # ensures the results are structured cleanly
 		),

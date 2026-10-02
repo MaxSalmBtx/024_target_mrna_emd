@@ -1321,3 +1321,158 @@ get_parafac <- function(x, verbose = FALSE, k = 6) {
 }
 
 
+#' Convert an renv.lock file into a Dockerfile
+#'
+#' @param renv_file Path to the renv.json or renv.lock file.
+#' @param output_dockerfile Path where the Dockerfile will be saved. Default: "Dockerfile".
+#' @param method Either "renv" (copies lockfile and runs renv::restore; recommended for reproducibility)
+#'               or "explicit" (parses packages into explicit R install statements using pak/remotes).
+#' @param base_image Custom base Docker image. If NULL, auto-selects 'rocker/r-ver:<R-version>'.
+#' @param use_ppm_binaries Logical; if TRUE, configures Posit Package Manager (PPM) binary repository
+#'                         for Ubuntu to enable fast, pre-compiled package installations instead of slow source builds.
+#' @param extra_sysreqs Character vector of additional Ubuntu apt packages to install.
+#' @param workdir Working directory inside the Docker container. Default: "/project".
+#' @param entry_cmd Command executed when container runs, e.g. 'CMD ["R"]' or 'CMD ["Rscript", "00_run_targets.R"]'.
+#' @return Invisibly returns the Dockerfile content as a character vector.
+renv_to_dockerfile <- function(
+  renv_file = "renv.json",
+  output_dockerfile = "Dockerfile",
+  use_ppm_binaries = TRUE,
+  entry_cmd = 'CMD ["R"]'
+) {
+
+	## Scaffolding
+	# renv_file = "renv.json"; use_ppm_binaries = TRUE; entry_cmd = 'CMD ["R"]'
+	
+	## Dependencies
+	library(jsonlite)
+	
+	## Input data
+	lock <- jsonlite::fromJSON(renv_file, simplifyVector = FALSE)
+
+	## --- Detect R version ---
+	r_version <- lock$R$Version
+	if (is.null(r_version) || !nzchar(r_version)) {
+		r_version <- "4.3.2" # Fallback if unspecified
+		logger::log_warn("R version not found in lockfile. Defaulting to 4.3.2.")
+	}
+    base_image <- glue::glue("rocker/r-ver:{r_version}")
+
+	## --- Standard system libraries --- 
+	default_sysreqs <- 
+		c(
+			"build-essential",
+			"libcurl4-openssl-dev",
+			"libssl-dev",
+			"libxml2-dev",
+			"libgit2-dev",
+			"zlib1g-dev",
+			"libfontconfig1-dev",
+			"libharfbuzz-dev",
+			"libfribidi-dev",
+			"libfreetype6-dev",
+			"libpng-dev",
+			"libtiff5-dev",
+			"libjpeg-dev",
+			"git",
+			"wget"
+		)
+	sysreqs_str <- paste(default_sysreqs, collapse = " \\\n    ")
+
+	## --- Build Dockerfile lines ---
+	dfile <- 
+		c(
+	sprintf("# Generated automatically from %s", basename(renv_file)),
+	sprintf("FROM %s", base_image),
+	"",
+	"# Set non-interactive environment for apt & renv",
+	"#ENV DEBIAN_FRONTEND=noninteractive",
+	"#ENV RENV_PATHS_CACHE=/root/.cache/R/renv"
+	)
+
+  # Configure binary package repository (RSPM/PPM) if enabled for fast installs
+  if (use_ppm_binaries) {
+    dfile <- c(
+      dfile,
+      "",
+      "# Use Posit Package Manager for pre-compiled Linux binaries (speeds up builds dramatically)",
+      "RUN echo 'options(repos = c(CRAN = \"https://packagemanager.posit.co/cran/__linux__/jammy/latest\"))' >> /usr/local/lib/R/etc/Rprofile.site"
+    )
+  }
+
+  # Install Linux system dependencies
+  dfile <- c(
+    dfile,
+    "",
+    "# Install core system dependencies",
+    "RUN apt-get update && apt-get install -y --no-install-recommends \\",
+    sprintf("    %s \\", sysreqs_str),
+    "    && rm -rf /var/lib/apt/lists/*",
+    ""
+  )
+
+    # ----------------------------------------------------
+    # Explicit Package Installation
+    # ----------------------------------------------------
+	packages <- lock$Packages
+    cran_pkgs <- character()
+    bioc_pkgs <- character()
+    github_pkgs <- character()
+
+	for (pkg_name in names(packages)) {
+		pkg_meta <- packages[[pkg_name]]
+		source_type <- pkg_meta$Source %||% "Repository"
+
+		if (identical(source_type, "Bioconductor")) {
+			bioc_pkgs <- c(bioc_pkgs, pkg_name)
+		}else if (identical(source_type, "GitHub")) {
+			user <- pkg_meta$RemoteUsername
+			repo <- pkg_meta$RemoteRepo
+			ref <- pkg_meta$RemoteRef %||% pkg_meta$RemoteSha %||% "HEAD"
+			github_pkgs <- c(github_pkgs, sprintf("%s/%s@%s", user, repo, ref))
+		}else{
+		cran_pkgs <- c(cran_pkgs, pkg_name)
+		}
+	}
+
+    dfile <- c(
+      dfile,
+      "",
+      "# Install pak for robust, multi-threaded package installations with sysreq resolution",
+      'RUN R -e "install.packages(\'pak\', repos = \'https://r-lib.github.io/p-pkg\')"'
+    )
+
+    if (length(cran_pkgs) > 0) {
+      chunk_size <- 40
+      chunks <- split(cran_pkgs, ceiling(seq_along(cran_pkgs) / chunk_size))
+      for (chunk in chunks) {
+        pkg_list_str <- paste(sprintf('\"%s\"', chunk), collapse = ", ")
+        dfile <- c(
+          dfile,
+          sprintf('RUN R -e \'pak::pkg_install(c(%s))\'', pkg_list_str)
+        )
+      }
+    }
+
+    if (length(bioc_pkgs) > 0) {
+      bioc_list_str <- paste(sprintf('\"%s\"', bioc_pkgs), collapse = ", ")
+      dfile <- c(
+        dfile,
+        sprintf('RUN R -e \'pak::pkg_install(c(%s))\'', bioc_list_str)
+      )
+    }
+
+    if (length(github_pkgs) > 0) {
+      for (gh_repo in github_pkgs) {
+        dfile <- c(
+          dfile,
+          sprintf('RUN R -e \'pak::pkg_install(\"%s\")\'', gh_repo)
+        )
+      }
+    }
+  
+	writeLines(dfile, con = output_dockerfile)
+	logger::log_info("Generated Dockerfile at: {output_dockerfile}")
+	invisible(dfile)
+}
+

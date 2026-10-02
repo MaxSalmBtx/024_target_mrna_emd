@@ -21,15 +21,15 @@ tar_source(
 ## --- Parelellisation ---
 # https://books.ropensci.org/targets/crew.html
 # 13.5 Heterogeneous workers: these will be deployed at the target level for efficiency on local compute
-controller_local <- 
-	crew::crew_controller_local(
-		name = "my_local_controller",
-		workers = 8, 
-		host = "127.0.0.1",
-		garbage_collection = TRUE,
-		options_local = crew_options_local(log_directory = "./crew_logs", log_join = FALSE)
-	)
-
+# controller_local <- 
+	# crew::crew_controller_local(
+		# name = "my_local_controller",
+		# workers = 8, 
+		# # host = "127.0.0.1",
+		# garbage_collection = TRUE,
+		# options_local = crew_options_local(log_directory = "./crew_logs", log_join = FALSE)
+	# )
+controller <- crew_controller_local(workers = 4)
 
 ## --- Get global package dependencies for targets ---
 
@@ -37,7 +37,8 @@ tar_option_set(
 	packages = c("quarto", "logger", "readr", "readxl", "janitor", "dplyr", "tidyr", "checkmate", "ensembldb", "EnsDb.Hsapiens.v86", "org.Hs.eg.db", "AnnotationDbi", "ggplot2", "ggrepel", "paletteer", "plotly", "pander", "gtExtras", "ComplexHeatmap"),
 	memory = "transient", # extra options for downstream workers
 	storage = "worker", 
-	retrieval = "worker",	
+	retrieval = "worker",
+	controller = controller,	
 	garbage_collection = TRUE,
 	workspace_on_error = TRUE
 )
