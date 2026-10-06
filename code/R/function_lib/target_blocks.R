@@ -49,7 +49,7 @@ tumour_mrna_deg_module <-
 		tar_target(name = tumour_mrna_emd, command = write_heatmap(x = gene_emd_max_heat_static_plt, file_out = "../../output/tumour_mrna_emd.svg"), format = "file"),
 		tar_target(
 			name = gene_emd_max_rds,
-			command = readr::write_rds(gene_emd_max, file = "../../output/gene_emd_max.rds"),
+			command = export_tsv(x = gene_emd_max, file_out = "../../output/gene_emd_max.rds"),
 			format = "file"
 		)
 	)

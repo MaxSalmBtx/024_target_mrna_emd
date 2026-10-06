@@ -1482,6 +1482,13 @@ renv_to_dockerfile <- function(
 	invisible(dfile)
 }
 
+
+export_tsv <- function(x, file_out) {
+	x |>
+	readr::write_rds(file = file_out)
+	return(file_out)
+}
+
 explore_parafac <- function(x) {
 
 	## Scaffold
