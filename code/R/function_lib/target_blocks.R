@@ -46,6 +46,11 @@ tumour_mrna_deg_module <-
 			name = parafac_mdl,
 			command = get_parafac(x = gene_emd_max)),
 		tar_target(gene_emd_max_heat_static_plt, plot_static_heatmap(x = gene_emd_max, y = ensembl_ids)),
-		tar_target(name = tumour_mrna_emd, command = write_heatmap(x = gene_emd_max_heat_static_plt, file_out = "../../output/tumour_mrna_emd.svg"), format = "file")	
+		tar_target(name = tumour_mrna_emd, command = write_heatmap(x = gene_emd_max_heat_static_plt, file_out = "../../output/tumour_mrna_emd.svg"), format = "file"),
+		tar_target(
+			name = gene_emd_max_rds,
+			command = readr::write_rds(gene_emd_max, file = "../../output/gene_emd_max.rds"),
+			format = "file"
+		)
 	)
 

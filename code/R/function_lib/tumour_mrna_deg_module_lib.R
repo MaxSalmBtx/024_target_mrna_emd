@@ -1348,8 +1348,14 @@ renv_to_dockerfile <- function(
 	library(jsonlite)
 	
 	## Input data
-	lock <- jsonlite::fromJSON(renv_file, simplifyVector = FALSE)
-
+	lock <- jsonlite::fromJSON(renv_file, simplifyVector = TRUE)
+	tmp <- tibble::enframe(lock$Packages)
+	pkg_tb <- 
+		tmp |> 
+		tidyr::unnest_wider(value) # This gathers packages versions
+  
+  
+  
 	## --- Detect R version ---
 	r_version <- lock$R$Version
 	if (is.null(r_version) || !nzchar(r_version)) {
@@ -1475,4 +1481,63 @@ renv_to_dockerfile <- function(
 	logger::log_info("Generated Dockerfile at: {output_dockerfile}")
 	invisible(dfile)
 }
+
+explore_parafac <- function(x) {
+
+	## Scaffold
+	# tar_load(parafac_mdl); x = parafac_mdl
+	
+	## core consistency diagnostic: A value of 100 indiciates a perfect multilinear structure, and smaller values indicate greater violations of multilinear structure.
+	
+	cc_vals <- unlist(sapply(X = x, FUN = "[", i = "cc"))
+
+	to_plt <- x[[2]]$mdl
+
+	heatmap(to_plt$A) # Indications
+	heatmap(to_plt$B) # Healthy tissue
+	heatmap(to_plt$C) # Genes
+
+
+}
+
+explore_pca <- function() {
+
+	## --- Scaffolding ---
+	tar_load(gene_emd_max); x = gene_emd_max
+
+	## --- Load the necessary libraries ---
+	library(FactoMineR)
+
+	## --- Prepare data ---
+	# Lowest EMD value for earch tissue-tumour comparison
+	to_plot <-
+		x |>
+		# dplyr::left_join(y, by = c("GENEID")) |>
+		dplyr::filter(d >= 0) |>
+		dplyr::filter(!grepl("Leukemia", primary_disease_or_tissue)) |>
+		dplyr::filter(!grepl("Lymphoma", primary_disease_or_tissue)) |>
+		dplyr::select(priority, primary_disease_or_tissue, GENEID, emd, pval_wilcox) |>
+		dplyr::ungroup() |>
+		dplyr::group_by(primary_disease_or_tissue, GENEID) |>
+		dplyr::slice_min(n = 1, order_by = emd) 
+	data_for_pca <-
+		to_plot |>
+		dplyr::select(primary_disease_or_tissue, GENEID, emd) |>
+		tidyr::pivot_wider(names_from = GENEID, values_from = emd) |>
+		tibble::column_to_rownames(var = "primary_disease_or_tissue")
+
+	## --- Run the PCA ---
+	res_pca <- 
+		FactoMineR::PCA(data_for_pca, graph = FALSE)
+
+	# Variable Factor Map: Shows how variables group together and contribute to the principal components.
+	plot(res_pca, choix = "var")
+
+	# Individuals Factor Map: Shows how the indications samples are spread across the principal components.
+	plot(res_pca, choix = "ind")
+
+
+
+}
+
 
